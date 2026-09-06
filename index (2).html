@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f1ea">
+<title>随身阅读器</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-paper">
+
+  <!-- 书架 -->
+  <div id="screen-library" class="screen">
+    <div class="topbar">
+      <div class="title">随身阅读器</div>
+    </div>
+    <div class="scroll">
+      <div class="hero">
+        <div class="logo">
+          <svg class="icon" viewBox="0 0 24 24" style="width:30px;height:30px;stroke:#fff;"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 0-2 2V5z"/><path d="M4 19a2 2 0 0 1 2-2h12"/></svg>
+        </div>
+        <h1>随身阅读器</h1>
+        <p class="sub">离线阅读 · 支持 EPUB 与 TXT</p>
+        <button class="import-btn" id="btn-import">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12M6 9l6-6 6 6"/><path d="M4 21h16"/></svg>
+          导入书籍
+        </button>
+      </div>
+      <div class="bookgrid" id="book-list"></div>
+    </div>
+  </div>
+
+  <!-- 阅读界面 -->
+  <div id="screen-reader" class="screen hidden">
+    <div class="topbar">
+      <button class="icon-btn" id="reader-back" aria-label="返回">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="title" id="reader-title">书名</div>
+      <button class="icon-btn" id="btn-delete" aria-label="删除">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+      </button>
+    </div>
+
+    <!-- 加载指示 -->
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">正在加载…</div>
+    </div>
+    <!-- txt 内容 -->
+    <div class="scroll" id="txt-view"></div>
+    <!-- epub 内容 -->
+    <div id="viewer"></div>
+
+    <!-- 底部控制 -->
+    <div class="bottombar">
+      <button class="prev" id="btn-prev">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg> 上一章
+      </button>
+      <div class="ctrl">
+        <button class="icon-btn" id="btn-toc" aria-label="目录">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-settings" aria-label="设置">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+      <button class="next" id="btn-next">下一章
+        <svg class="icon" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 遮罩 -->
+  <div id="sheet-mask" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:15;"></div>
+
+  <!-- 设置抽屉 -->
+  <div class="sheet" id="settings">
+    <div class="handle"></div>
+    <div class="row">
+      <label>字号</label>
+      <div class="font-control">
+        <button id="font-down" aria-label="减小字号">−</button>
+        <span id="font-val">100%</span>
+        <button id="font-up" aria-label="增大字号">＋</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>主题</label>
+      <div class="theme-row">
+        <div class="theme-dot" data-theme="paper" style="background:#f5f1ea;color:#2b2620;">纸</div>
+        <div class="theme-dot" data-theme="sepia" style="background:#f2e8d5;color:#4a3f2e;">暖</div>
+        <div class="theme-dot" data-theme="green" style="background:#e7efe4;color:#2f3a2c;">绿</div>
+        <div class="theme-dot" data-theme="dark" style="background:#191b20;color:#d8d3c9;">夜</div>
+      </div>
+    </div>
+    <div class="row">
+      <label>阅读模式</label>
+      <div class="font-control">
+        <button id="mode-scroll" aria-label="滚动模式">滚动</button>
+        <button id="mode-paged" aria-label="分页模式">分页</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 章节列表（epub 目录） -->
+  <div class="sheet" id="chapter-sheet">
+    <div class="handle"></div>
+    <h3>目录</h3>
+    <div class="toc" id="toc"></div>
+  </div>
+
+  <!-- toast -->
+  <div id="toast"></div>
+
+  <input type="file" id="file-input" accept=".epub,.txt" style="display:none;">
+
+  <!-- 依赖库（需先 JSZip 后 epub.js） -->
+  <script src="lib/jszip.min.js"></script>
+  <script src="lib/epub.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

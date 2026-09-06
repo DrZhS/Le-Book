@@ -1,0 +1,182 @@
+/* ============================================================
+   Novel Reader · 样式表
+   移动端优先 · 自包含
+   ============================================================ */
+
+:root{
+  --bg:#f5f1ea;
+  --panel:#fffdf9;
+  --ink:#2b2620;
+  --muted:#9a9086;
+  --line:#e8e0d5;
+  --accent:#c0392b;
+  --accent-soft:#f6ded9;
+  --shadow:0 6px 22px rgba(60,45,30,.12);
+  --radius:16px;
+}
+
+/* 阅读主题 */
+.theme-paper{
+  --bg:#f5f1ea; --panel:#fffdf9; --ink:#2b2620;
+  --muted:#9a9086; --line:#e8e0d5;
+}
+.theme-sepia{
+  --bg:#f2e8d5; --panel:#faf3e3; --ink:#4a3f2e;
+  --muted:#ab9d85; --line:#e2d5bb;
+}
+.theme-green{
+  --bg:#e7efe4; --panel:#f3f8f0; --ink:#2f3a2c;
+  --muted:#93a593; --line:#d3e0cd;
+}
+.theme-dark{
+  --bg:#191b20; --panel:#21242c; --ink:#d8d3c9;
+  --muted:#7c7f88; --line:#31343d;
+}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--ink);
+  display:flex; flex-direction:column; height:100vh; height:100dvh;
+  overflow:hidden; transition:background .25s,color .25s;
+}
+
+/* ---- 通用 ---- */
+button{font-family:inherit;border:0;background:none;color:var(--ink);cursor:pointer;}
+.hidden{display:none !important;}
+.icon{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+/* 顶部栏 */
+.topbar{
+  height:52px; flex:0 0 52px; display:flex; align-items:center; gap:10px;
+  padding:0 12px; background:var(--panel); border-bottom:1px solid var(--line);
+}
+.topbar .title{flex:1;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.icon-btn{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--ink);}
+.icon-btn:active{background:var(--line);}
+
+/* 可滚动区域 */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.pad{padding:16px;}
+
+/* ---- 库界面 ---- */
+#screen-library .hero{
+  padding:26px 18px 14px; text-align:center;
+}
+#screen-library .logo{
+  width:64px;height:64px;margin:0 auto 12px;border-radius:18px;
+  background:linear-gradient(135deg,#c0392b,#e67e22);
+  display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:var(--shadow);
+}
+#screen-library h1{margin:0;font-size:22px;font-weight:700;}
+#screen-library .sub{margin:6px 0 0;color:var(--muted);font-size:13px;}
+.import-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:14px;margin-top:20px;border-radius:14px;
+  background:var(--accent);color:#fff;font-size:16px;font-weight:600;
+  box-shadow:var(--shadow);
+}
+.import-btn:active{opacity:.9;}
+
+.bookgrid{display:flex;flex-direction:column;gap:12px;padding:18px;}
+.bookcard{
+  display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;
+  background:var(--panel);box-shadow:var(--shadow);border:1px solid var(--line);
+}
+.bookcard .thumb{
+  width:44px;height:60px;border-radius:6px;flex:0 0 44px;
+  background:linear-gradient(160deg,#e67e22,#c0392b);
+  display:flex;align-items:flex-end;justify-content:center;
+  color:#fff;font-size:10px;font-weight:700;padding:6px 4px;text-align:center;line-height:1.2;overflow:hidden;
+}
+.bookcard .meta{flex:1;min-width:0;}
+.bookcard .name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bookcard .info{font-size:12px;color:var(--muted);margin-top:4px;}
+.bookcard .progress{height:4px;border-radius:4px;background:var(--line);margin-top:8px;overflow:hidden;}
+.bookcard .progress > i{display:block;height:100%;background:var(--accent);}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
+.empty .icon{width:44px;height:44px;margin:0 auto 12px;display:block;stroke-width:1.2;}
+
+/* ---- 阅读界面 ---- */
+#screen-reader{position:fixed;inset:0;background:var(--bg);z-index:10;display:flex;flex-direction:column;}
+
+/* txt 内容 */
+.txt-content{
+  padding:20px 18px 40px; font-size:18px; line-height:1.9;
+  text-align:justify; word-break:break-word; color:var(--ink);
+}
+.txt-content .chapter-title{
+  font-size:22px;font-weight:700;text-align:center;margin:6px 0 20px;line-height:1.5;
+}
+.txt-content p{margin:0 0 1.1em;text-indent:2em;}
+
+/* epub 容器 */
+#viewer{flex:1;overflow:hidden;background:var(--bg);}
+#viewer iframe{width:100%;height:100%;border:0;background:var(--bg);}
+
+/* 底部控制栏 */
+.bottombar{
+  flex:0 0 56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 8px;background:var(--panel);border-top:1px solid var(--line);
+}
+.prev,.next{
+  min-width:64px;height:40px;border-radius:12px;font-size:15px;color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+}
+.prev:disabled,.next:disabled{color:var(--muted);opacity:.4;}
+.ctrl{display:flex;gap:6px;}
+.ctrl .icon-btn{color:var(--ink);}
+
+/* 底部设置抽屉 */
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;background:var(--panel);
+  border-radius:20px 20px 0 0;padding:16px 18px 22px;
+  transform:translateY(110%);transition:transform .28s ease;z-index:20;
+  border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(0,0,0,.15);
+}
+.sheet.open{transform:translateY(0);}
+.sheet .handle{width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 16px;}
+.sheet h3{margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600;}
+.sheet .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.sheet .row label{font-size:15px;}
+.theme-row{display:flex;gap:10px;}
+.theme-dot{
+  width:40px;height:40px;border-radius:50%;border:2px solid transparent;position:relative;
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+}
+.theme-dot.sel{border-color:var(--accent);}
+.font-control{display:flex;align-items:center;gap:14px;}
+.font-control button{
+  width:34px;height:34px;border-radius:10px;background:var(--line);font-size:18px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;
+}
+.font-control span{min-width:44px;text-align:center;font-size:14px;color:var(--muted);}
+.font-control button.on{background:var(--accent);color:#fff;}
+
+/* 章节列表 */
+#chapter-sheet .toc{max-height:46vh;overflow-y:auto;}
+#chapter-sheet .toc .item{
+  padding:13px 6px;border-bottom:1px solid var(--line);font-size:15px;color:var(--ink);
+  display:flex;align-items:center;gap:10px;
+}
+#chapter-sheet .toc .item.cur{color:var(--accent);font-weight:600;}
+
+/* 加载指示 */
+.loading{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;z-index:30;
+  background:var(--bg);color:var(--muted);
+}
+.loading.hidden{display:none;}
+.loading-text{font-size:14px;}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* toast */
+#toast{
+  position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);
+  background:rgba(30,30,30,.92);color:#fff;padding:10px 18px;border-radius:12px;
+  font-size:14px;opacity:0;pointer-events:none;transition:all .25s;z-index:50;max-width:80%;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
