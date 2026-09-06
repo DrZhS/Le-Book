@@ -98,6 +98,7 @@ button{font-family:inherit;border:0;background:none;color:var(--ink);cursor:poin
   display:flex;align-items:flex-end;justify-content:center;
   color:#fff;font-size:10px;font-weight:700;padding:6px 4px;text-align:center;line-height:1.2;overflow:hidden;
 }
+.bookcard .thumb img{width:100%;height:100%;object-fit:cover;border-radius:4px;}
 .bookcard .meta{flex:1;min-width:0;}
 .bookcard .name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bookcard .info{font-size:12px;color:var(--muted);margin-top:4px;}
@@ -419,24 +420,45 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     library.push(entry);
 
     if(isTxt){
-      const reader = new FileReader();
-      reader.onload = ()=>{
-        const raw = String(reader.result||'');
-        entry.txt = splitTxt(raw);
-        persist();
-        renderLibrary();
-        openBook(entry);
-      };
-      reader.onerror = ()=>{ toast('读取失败'); };
-      reader.readAsText(file);
+      // 把正文存进本地（IDB），重开网页才能恢复阅读进度
+      idbSet(id, file).then(()=>{
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          const raw = String(reader.result||'');
+          entry.txt = splitTxt(raw);
+          persist();
+          renderLibrary();
+          openBook(entry);
+        };
+        reader.onerror = ()=>{ toast('读取失败'); };
+        reader.readAsText(file);
+      }).catch(()=>{ toast('存储失败'); });
     } else {
       // epub 存 Blob 到 IDB，读取时再打开
       idbSet(id, file).then(()=>{
         persist();
         renderLibrary();
+        extractCover(entry, file);
         openBook(entry);
       }).catch(()=>{ toast('存储失败'); });
     }
+  }
+
+  /* ---------- epub 封面提取 ---------- */
+  function extractCover(book, file){
+    file.arrayBuffer().then(buf=>{
+      try{
+        const b = ePub(buf);
+        b.coverUrl().then(url=>{
+          if(!url) return;
+          fetch(url).then(r=>r.blob()).then(blob=>{
+            const fr = new FileReader();
+            fr.onload = ()=>{ book.cover = fr.result; persist(); renderLibrary(); };
+            fr.readAsDataURL(blob);
+          }).catch(()=>{});
+        }).catch(()=>{});
+      }catch(e){}
+    }).catch(()=>{});
   }
 
   /* ---------- txt 分章 ---------- */
@@ -470,7 +492,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   function persist(){
     // 只存可序列化字段（txtText 不存，太大走 IDB 后备）
     const slim = library.map(b => ({
-      id:b.id, title:b.title, type:b.type, progress:b.progress, progressText:b.progressText
+      id:b.id, title:b.title, type:b.type, progress:b.progress, progressText:b.progressText,
+      progressIdx:b.progressIdx, progressCfi:b.progressCfi, cover:b.cover
     }));
     store.set('library', slim);
   }
@@ -491,7 +514,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       card.className = 'bookcard';
       const typeLbl = book.type===TYPES.EPUB ? 'EPUB' : 'TXT';
       card.innerHTML =
-        '<div class="thumb">'+typeLbl+'</div>'+
+        '<div class="thumb">'+ (book.cover ? '<img src="'+book.cover+'" alt="">' : typeLbl) +'</div>'+
         '<div class="meta">'+
           '<div class="name">'+esc(book.title)+'</div>'+
           '<div class="info">'+typeLbl+' · '+esc(book.progressText||'未开始')+'</div>'+
@@ -649,8 +672,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   /* ---------- 设置 ---------- */
   function toggleSheet(id, open){
     const s = $('#'+id);
-    s.classList.toggle('open', open!==false ? true : false);
-    if(open===false) s.classList.remove('open'); else s.classList.add('open');
+    if(open===undefined){ open = !s.classList.contains('open'); }
+    s.classList.toggle('open', open);
+    const mask = $('#sheet-mask');
+    if(mask){ mask.classList.toggle('hidden', !open); }
   }
   function applyTheme(){
     document.body.className = 'theme-' + themeName;
@@ -732,7 +757,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     $('#btn-prev').addEventListener('click', ()=>{ current && current.type===TYPES.TXT ? txtPrev() : epubPrev(); });
     $('#btn-next').addEventListener('click', ()=>{ current && current.type===TYPES.TXT ? txtNext() : epubNext(); });
     $('#btn-toc').addEventListener('click', ()=>{ current && current.type===TYPES.EPUB ? epubToc() : toggleSheet('chapter-sheet', true); });
-    $('#btn-settings').addEventListener('click', ()=> toggleSheet('settings', true));
+    $('#btn-settings').addEventListener('click', ()=> toggleSheet('settings'));
     $('#btn-delete').addEventListener('click', deleteBook);
     $('#sheet-mask').addEventListener('click', ()=>{
       toggleSheet('settings', false); toggleSheet('chapter-sheet', false);
