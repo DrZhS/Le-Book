@@ -44,7 +44,8 @@
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;height:100%;}
 body{
-  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px; letter-spacing:.02em;
   background:var(--bg); color:var(--ink);
   display:flex; flex-direction:column; height:100vh; height:100dvh;
   overflow:hidden; transition:background .25s,color .25s;
@@ -93,12 +94,14 @@ button{font-family:inherit;border:0;background:none;color:var(--ink);cursor:poin
   background:var(--panel);box-shadow:var(--shadow);border:1px solid var(--line);
 }
 .bookcard .thumb{
-  width:44px;height:60px;border-radius:6px;flex:0 0 44px;
-  background:linear-gradient(160deg,#e67e22,#c0392b);
+  width:56px;height:78px;border-radius:8px;flex:0 0 56px;
+  overflow:hidden;position:relative;
+  background:var(--line);
   display:flex;align-items:flex-end;justify-content:center;
-  color:#fff;font-size:10px;font-weight:700;padding:6px 4px;text-align:center;line-height:1.2;overflow:hidden;
+  color:var(--muted);font-size:11px;font-weight:700;padding:6px 4px;text-align:center;line-height:1.2;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
-.bookcard .thumb img{width:100%;height:100%;object-fit:cover;border-radius:4px;}
+.bookcard .thumb img{width:100%;height:100%;object-fit:cover;display:block;border:0;}
 .bookcard .meta{flex:1;min-width:0;}
 .bookcard .name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bookcard .info{font-size:12px;color:var(--muted);margin-top:4px;}
@@ -396,6 +399,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   let fontScale = parseFloat(store.get('fontScale')) || 1.0;
   let themeName = store.get('theme') || 'paper';
   let flowMode = store.get('flow') || 'scrolled';   // 默认滚动模式，分页渲染更重易卡
+  let spineItems = [];   // epub 章节（spine）列表，用于章节间切换
+  let spinePos = 0;      // 当前 spine 章节索引
 
   /* ---------- 读取文件 ---------- */
   function pickFile(){
@@ -413,10 +418,17 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const isEpub = ext==='epub';
     const isTxt = ext==='txt';
     if(!isEpub && !isTxt){ toast('仅支持 .epub 或 .txt 文件'); return; }
-    const id = 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
     const title = dot>-1 ? name.slice(0,dot) : name;
-
-    const entry = { id, title, type: isEpub?TYPES.EPUB:TYPES.TXT, progress:0, progressText:'未开始' };
+    const type = isEpub?TYPES.EPUB:TYPES.TXT;
+    // 同名书覆盖：已有同书名同类型则确认后替换（清进度）
+    const existing = library.find(b=> b.title===title && b.type===type);
+    if(existing){
+      if(!confirm('已存在《'+title+'》，覆盖原书并清除阅读进度？')) return;
+      idbDel(existing.id);
+      library = library.filter(b=> b.id!==existing.id);
+    }
+    const id = 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    const entry = { id, title, type, progress:0, progressText:'未开始' };
     library.push(entry);
 
     if(isTxt){
@@ -604,6 +616,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       blob.arrayBuffer().then(buf=>{
         try{
           currentBook = ePub(buf);
+          spineItems = (currentBook.spine && currentBook.spine.spineItems) ? currentBook.spine.spineItems.slice() : [];
+          spinePos = 0;
           if(currentRendition){ try{ currentRendition.destroy(); }catch(e){} }
           currentRendition = currentBook.renderTo('viewer', {
             width:'100%', height:'100%',
@@ -618,8 +632,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             currentRendition.on('displayed', ()=> showLoading(false));
           }
           currentRendition.on('relocated', (loc)=>{
-            if(loc && loc.start && loc.start.cfi){
-              current.progressCfi = loc.start.cfi;
+            if(!loc) return;
+            const s = loc.start || {};
+            // 定位当前章节
+            if(typeof s.index === 'number'){ spinePos = s.index; }
+            else if(s.href){ spineItems.forEach((it,i)=>{ if(it.href && (it.href===s.href || s.href.indexOf(it.href)>=0)) spinePos=i; }); }
+            if(s.cfi){
+              current.progressCfi = s.cfi;
               current.progress = loc.percentage || 0;
               current.progressText = Math.round((loc.percentage||0)*100) + '%';
               updateProgress(current);
@@ -646,8 +665,24 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       }).catch(()=>{ toast('读取失败'); showLoading(false); });
     });
   }
-  function epubNext(){ if(currentRendition) currentRendition.next(); }
-  function epubPrev(){ if(currentRendition) currentRendition.prev(); }
+  function epubNext(){
+    if(!currentRendition){ return; }
+    if(!spineItems.length){ try{ currentRendition.next(); }catch(e){} return; }
+    if(spinePos < spineItems.length-1){
+      spinePos++;
+      const it = spineItems[spinePos];
+      currentRendition.display(it.href || it.cfi);
+    } else { toast('已是最后一章'); }
+  }
+  function epubPrev(){
+    if(!currentRendition){ return; }
+    if(!spineItems.length){ try{ currentRendition.prev(); }catch(e){} return; }
+    if(spinePos > 0){
+      spinePos--;
+      const it = spineItems[spinePos];
+      currentRendition.display(it.href || it.cfi);
+    } else { toast('已是第一章'); }
+  }
   function epubToc(){
     toggleSheet('chapter-sheet', true);
   }
